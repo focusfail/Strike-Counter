@@ -1,0 +1,16 @@
+# ASan suppression file for fontconfig/pango leaks
+# These are known library leaks that cache font data until process exit
+
+# Fontconfig leaks - caches font configuration data
+leak:libfontconfig.so.1
+
+# Pango/Cairo leaks - related to font rendering
+leak:libpangocairo-1.0.so.0
+leak:libpango-1.0.so.0
+leak:libcairo.so.2
+
+# Alternative: suppress by function name if you want more granular control
+# leak:FcValueSave
+# leak:FcFontRenderPrepare
+# leak:FcPatternAddBool
+# leak:FcPatternAddInteger

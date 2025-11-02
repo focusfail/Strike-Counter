@@ -1,0 +1,18 @@
+@PointClass size(-16 -16 0, 16 16 72) color(40 57 127)= info_ct_start : "CT Spawn"
+[
+	angle(integer) : "Yaw"
+]
+
+@PointClass size(-16 -16 0, 16 16 72) color(251 172 24) = info_t_start : "T Spawn"
+[
+	angle(integer) : "Yaw"
+]
+
+@SolidClass = bomb_target : "Bomb target area"
+[
+]
+
+@SolidClass = worldspawn : "Worldspawn"
+[
+	message(string) : "Map name"
+]

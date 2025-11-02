@@ -1,0 +1,20 @@
+{
+  "id": "strike coutner",
+  "name": "Combining beatiful old graphics with modern shooter tech",
+  "version": 1,
+  "fileformats": {
+    "map": ["quake3"]
+  },
+  "filesystem": {
+    "searchpath": "/home/focus/pp/strike_counter/client/assets",
+    "textures": [
+      "textures"
+    ]
+  },
+  "entities": {
+    "definitions": [
+      "strike_counter.fgd"
+    ]
+  }
+}
+

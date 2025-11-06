@@ -9,6 +9,7 @@
 #include <string.h>
 #include <strings.h>
 #include <stb_image.h>
+#include <xkbcommon/xkbcommon.h>
 
 #define DEFAULT_VERTEX_SHADER SC_ASSET_PATH "/shaders/bsp.vert"
 #define DEFAULT_FRAGMENT_SHADER SC_ASSET_PATH "/shaders/bsp.frag"
@@ -21,18 +22,25 @@ typedef struct {
     uint32_t base_instance;
 } drawcmd_t;
 
-void construct_element_buffer(bsp_t *bsp, bspgfx_t *gfx) {
-    drawcmd_t *cmds        = malloc(sizeof(*cmds) * bsp->face_count);
+void construct_faces_and_elems(bsp_t *bsp, bspgfx_t *gfx) {
+    drawcmd_t *cmds = malloc(sizeof(*cmds) * bsp->face_count);
+    rface_t *faces  = malloc(sizeof(*faces) * bsp->face_count);
+
     uint32_t max_elements  = bsp->surfedge_count * 3;
     uint32_t *elements     = malloc(sizeof(*elements) * max_elements);
     uint32_t element_count = 0;
+    uint32_t face_count    = 0;
 
     for (int i = 0; i < bsp->face_count; i++) {
         cmds[i] = (drawcmd_t){0};
     }
 
     for (int i = 0; i < bsp->face_count; i++) {
-        bspface_t *face = &bsp->faces[i];
+        bspface_t *face  = &bsp->faces[i];
+        bsptexinfo_t *ti = &bsp->texinfo[face->texinfo];
+        miptex_t *mt     = bsp->miptex[ti->miptex];
+
+        if (strncmp(mt->name, "aaatrigger", 16) == 0) continue;
 
         uint32_t face_start_index = element_count;
 
@@ -63,22 +71,40 @@ void construct_element_buffer(bsp_t *bsp, bspgfx_t *gfx) {
                          .base_vertex    = 0,
                          .base_instance  = 0,
         };
+
+        if (strncmp(mt->name, "aaatrigger", 16) == 0) {
+            continue;
+        }
+
+        faces[i] = (rface_t){
+            .texture = ti->miptex,
+            .size    = {mt->w, mt->h},
+            .s       = {ti->v_s[0], ti->v_s[1], ti->v_s[2], ti->v_s[3]},
+            .t       = {ti->v_t[0], ti->v_t[1], ti->v_t[2], ti->v_t[3]},
+            .side    = (uint32_t)face->side,
+        };
     }
 
     if (element_count > 0) {
         glNamedBufferStorage(gfx->elems, sizeof(*elements) * element_count,
                              elements, GL_DYNAMIC_STORAGE_BIT);
     }
+    gfx->elem_count = element_count;
 
     glNamedBufferStorage(gfx->cmds, sizeof(*cmds) * bsp->face_count, cmds,
                          GL_DYNAMIC_STORAGE_BIT);
 
-    gfx->elem_count = element_count;
+    glNamedBufferStorage(gfx->faces, sizeof(*faces) * bsp->face_count, faces,
+                         GL_DYNAMIC_STORAGE_BIT);
+
+    gfx->face_count = bsp->face_count;
+
     free(elements);
     free(cmds);
+    free(faces);
 }
 
-void construct_vertex_buffer(bsp_t *bsp, bspgfx_t *br) {
+void construct_vertices(bsp_t *bsp, bspgfx_t *br) {
     vec4 *verts = malloc(sizeof(*verts) * bsp->vert_count);
 
     for (int i = 0; i < bsp->vert_count; i++) {
@@ -110,10 +136,10 @@ bool load_wad_image(wad_t *wad, wadlumpinfo_t *lump, uint8_t **image, int *w,
     uint8_t *indices = (uint8_t *)((char *)mt + mt->offsets[0]);
     uint8_t *rgba    = malloc(pixels * 4);
 
-    int16_t *palette_indices =
+    int16_t *palette_size =
         (int16_t *)((char *)mt + mt->offsets[3] + (pixels / 64));
 
-    uint8_t *palette = (uint8_t *)palette_indices + sizeof(int16_t);
+    uint8_t *palette = (uint8_t *)palette_size + sizeof(*palette_size);
 
     for (int i = 0; i < pixels; i++) {
         uint8_t idx = indices[i];
@@ -141,36 +167,12 @@ bool load_wad_image(wad_t *wad, wadlumpinfo_t *lump, uint8_t **image, int *w,
     return true;
 }
 
-bool is_one_of(char c, const char *chars) {
-    for (int i = 0; i < strlen(chars); i++) {
-        if (chars[i] == c) return true;
-    }
-
-    return false;
-}
-
-const char *remove_effect(const char *src) {
-
-    while (*src != '\0' && is_one_of(*src, "+~-{}")) {
-        src++;
-    }
-
-    return src;
-}
-
 bool find_texture_in_wad(bsp_t *bsp, const char *name, wad_t **outwad,
                          wadlumpinfo_t **outlmp) {
-    if (strncasecmp(name, "aaatrigger", 16) == 0) return false;
-    if (strncasecmp(name, "invisible", 16) == 0) return false;
-    if (strncasecmp(name, "clip", 16) == 0) return false;
-
     *outwad = NULL;
     *outlmp = NULL;
 
     for (int i = 0; i < bsp->wad_count; i++) {
-
-        // name = remove_effect(name);
-
         wad_t *wad          = bsp->wads[i];
         wadlumpinfo_t *lump = NULL;
         if (wad_find_lump_by_name(wad, &lump, name)) {
@@ -183,15 +185,44 @@ bool find_texture_in_wad(bsp_t *bsp, const char *name, wad_t **outwad,
     return false;
 }
 
-void construct_face_buffer(bsp_t *bsp, bspgfx_t *gfx) {
-    rface_t *faces = malloc(sizeof(*faces) * bsp->face_count);
+bool load_image_from_bsp(bsp_t *bsp, miptex_t *mt, uint8_t **out, int *w,
+                         int *h) {
+    *w = mt->w;
+    *h = mt->h;
 
+    uint32_t pixels = mt->w * mt->h;
+    uint8_t *image  = malloc(pixels * 4);
+
+    int16_t *palette_size =
+        (int16_t *)((char *)mt + mt->offsets[3] + pixels / 64);
+
+    uint8_t *indices = (uint8_t *)((char *)mt + mt->offsets[0]);
+    uint8_t *palette = (uint8_t *)palette_size + sizeof(*palette_size);
+
+    for (int i = 0; i < pixels; i++) {
+        uint8_t idx = indices[i];
+        uint8_t r   = palette[idx * 3 + 0];
+        uint8_t g   = palette[idx * 3 + 1];
+        uint8_t b   = palette[idx * 3 + 2];
+
+        image[i * 4 + 0] = r;
+        image[i * 4 + 1] = g;
+        image[i * 4 + 2] = b;
+        image[i * 4 + 3] = 255;
+    }
+
+    *out = image;
+
+    return true;
+}
+
+void load_textures(bsp_t *bsp, bspgfx_t *gfx) {
     uint8_t missing[256 * 256 * 4];
     for (int i = 0; i < 256 * 256; i++) {
         missing[i * 4 + 0] = 255;
         missing[i * 4 + 1] = 0;
         missing[i * 4 + 2] = 255;
-        missing[i * 4 + 3] = 0;
+        missing[i * 4 + 3] = 255;
     }
 
     uint32_t tex;
@@ -201,7 +232,7 @@ void construct_face_buffer(bsp_t *bsp, bspgfx_t *gfx) {
     glTextureParameteri(tex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTextureParameteri(tex, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTextureParameteri(tex, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    // glTextureParameteri(tex, GL_TEXTURE_WRAP_R, GL_REPEAT);
+
     uint32_t textures_found = 0;
 
     // create a gpu texture for every miptex
@@ -212,14 +243,16 @@ void construct_face_buffer(bsp_t *bsp, bspgfx_t *gfx) {
         wadlumpinfo_t *lump;
         uint8_t *image = NULL;
         int w, h;
-
-        if (!find_texture_in_wad(bsp, mt->name, &wad, &lump)) {
+        if (mt->offsets[0] > 0) {
+            if (!load_image_from_bsp(bsp, mt, &image, &w, &h)) {
+                goto missing_texture;
+            }
+        } else if (find_texture_in_wad(bsp, mt->name, &wad, &lump)) {
             log_warn("Unable to locate texture '%s'", mt->name);
-            goto missing_texture;
-        };
 
-        if (!load_wad_image(wad, lump, &image, &w, &h)) {
-            goto missing_texture;
+            if (!load_wad_image(wad, lump, &image, &w, &h)) {
+                goto missing_texture;
+            }
         }
 
         log_debug("Texture %s at index %d", lump->name, i);
@@ -240,26 +273,7 @@ void construct_face_buffer(bsp_t *bsp, bspgfx_t *gfx) {
     log_info("Successfully loaded %d/%d textures", textures_found,
              bsp->miptex_count);
 
-    gfx->face_count = bsp->face_count;
-    for (int i = 0; i < gfx->face_count; i++) {
-        bspface_t *face  = &bsp->faces[i];
-        bsptexinfo_t *ti = &bsp->texinfo[face->texinfo];
-        miptex_t *mt     = bsp->miptex[ti->miptex];
-
-        faces[i] = (rface_t){
-            .texture = ti->miptex,
-            .size    = {mt->w, mt->h},
-            .s       = {ti->v_s[0], ti->v_s[1], ti->v_s[2], ti->v_s[3]},
-            .t       = {ti->v_t[0], ti->v_t[1], ti->v_t[2], ti->v_t[3]},
-            .side    = (uint32_t)face->side,
-        };
-    }
-
-    glNamedBufferStorage(gfx->faces, sizeof(*faces) * gfx->face_count, faces,
-                         GL_DYNAMIC_STORAGE_BIT);
-
     gfx->texture = tex;
-    free(faces);
 }
 
 void bsp_gfx_setup_buffers(bsp_t *bsp) {}
@@ -273,9 +287,9 @@ bspgfx_t *bsp_gfx_create(bsp_t *bsp) {
     glCreateBuffers(1, &gfx->elems);
     glCreateBuffers(1, &gfx->cmds);
 
-    construct_element_buffer(bsp, gfx);
-    construct_vertex_buffer(bsp, gfx);
-    construct_face_buffer(bsp, gfx);
+    construct_faces_and_elems(bsp, gfx);
+    construct_vertices(bsp, gfx);
+    load_textures(bsp, gfx);
 
     gfx->face_count = bsp->face_count;
     gfx->vert_count = bsp->vert_count;
@@ -326,6 +340,16 @@ void bsp_gfx_free(bspgfx_t *gfx) {
     }
 }
 
+bspface_t *get_faces_to_render(bsp_t *bsp) {
+
+    for (int i = 0; i < bsp->face_count; i++) {
+        bspface_t *face = &bsp->faces[i];
+        miptex_t *mt    = bsp->miptex[bsp->texinfo[face->texinfo].miptex];
+
+        if (strncmp(mt->name, "aaatrigger", 16) == 0) continue;
+    }
+}
+
 void bsp_gfx_load(bspgfx_t *gfx, bsp_t *bsp) {
     bsp_gfx_unload_gpu(gfx);
 
@@ -336,9 +360,9 @@ void bsp_gfx_load(bspgfx_t *gfx, bsp_t *bsp) {
     glCreateBuffers(1, &gfx->elems);
     glCreateBuffers(1, &gfx->cmds);
 
-    construct_element_buffer(bsp, gfx);
-    construct_vertex_buffer(bsp, gfx);
-    construct_face_buffer(bsp, gfx);
+    construct_faces_and_elems(bsp, gfx);
+    construct_vertices(bsp, gfx);
+    load_textures(bsp, gfx);
 
     gfx->face_count = bsp->face_count;
     gfx->vert_count = bsp->vert_count;

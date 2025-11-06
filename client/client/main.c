@@ -106,7 +106,7 @@ int main(void) {
     glClearColor(0.8f, 0.8f, 0.8f, 1.0f);
 
     bsp = bsp_load("/home/focus/.local/share/Steam/steamapps/common/Half-Life/"
-                   "cstrike/maps/de_train.bsp");
+                   "cstrike/maps/de_dust2.bsp");
 
     gfx = bsp_gfx_create(bsp);
     bsp_dump(bsp);

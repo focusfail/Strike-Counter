@@ -118,10 +118,20 @@ bool load_wad_image(wad_t *wad, wadlumpinfo_t *lump, uint8_t **image, int *w,
     for (int i = 0; i < pixels; i++) {
         uint8_t idx = indices[i];
 
-        rgba[i * 4 + 0] = palette[idx * 3 + 0];
-        rgba[i * 4 + 1] = palette[idx * 3 + 1];
-        rgba[i * 4 + 2] = palette[idx * 3 + 2];
-        rgba[i * 4 + 3] = 255;
+        uint8_t r = palette[idx * 3 + 0];
+        uint8_t g = palette[idx * 3 + 1];
+        uint8_t b = palette[idx * 3 + 2];
+        uint8_t a = 255;
+
+        if (mt->name[0] == '{' && r == 0 && g == 0 && b == 255) {
+            a = 0;
+            b = 0;
+        }
+
+        rgba[i * 4 + 0] = r;
+        rgba[i * 4 + 1] = g;
+        rgba[i * 4 + 2] = b;
+        rgba[i * 4 + 3] = a;
     }
 
     *w     = mt->w;

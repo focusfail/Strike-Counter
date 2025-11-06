@@ -15,11 +15,7 @@ void main() {
     uv = uv * (scale - texel_size) + texel_size * 0.5;
     
     vec4 color = texture(texture_array, vec3(uv, layer)); 
-
-    if (color == vec4(0.0, 0.0, 1.0, 1.0)) {
-        color.w = 0.0;
-    }
-    
+   
     if (debug == 1) { // draw only uv 
         fragColor = vec4(fract(texcoord), 0.0, 1.0);
     } else if (debug == 2){ // draw texture and uv for black

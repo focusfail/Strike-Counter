@@ -11,4 +11,5 @@ clean:
     rm -rf ./build
 
 run:
-    LSAN_OPTIONS=suppressions=asan_suppressions.txt build/strike_counter
+    build/strike_counter
+# LSAN_OPTIONS=suppressions=asan_suppressions.txt build/strike_counter

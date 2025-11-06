@@ -213,7 +213,8 @@ char **locate_wads(bsp_t *bsp, const char **base_paths, uint32_t path_count,
             continue;
         }
 
-        found_paths[(*found_count)++] = strndup(complete_path, 256);
+        found_paths[(*found_count)++] = strdup(complete_path);
+        // found_paths[(*found_count)++] = strndup(complete_path, 256);
 
         free(tmp_name);
         token = strtok(NULL, " ; ");
@@ -231,7 +232,7 @@ void load_wads(bsp_t *bsp) {
         return;
     }
 
-    uint32_t wad_path_count;
+    uint32_t wad_path_count = 0;
     char **wad_paths = locate_wads(bsp, wad_search_paths, wad_search_path_count,
                                    &wad_path_count);
 
@@ -245,7 +246,7 @@ void load_wads(bsp_t *bsp) {
 }
 
 bsp_t *bsp_load(const char *fn) {
-    char *file_buf;
+    char *file_buf   = NULL;
     size_t file_size = file_read(fn, &file_buf);
 
     if (file_size < sizeof(bspheader_t) || !file_buf) {
@@ -281,6 +282,10 @@ bsp_t *bsp_load(const char *fn) {
     lump               = &hdr->lumps[LUMP_TEXINFO];
     bsp->texinfo       = (bsptexinfo_t *)((char *)hdr + lump->ofs);
     bsp->texinfo_count = lump->len / sizeof(*bsp->texinfo);
+
+    lump             = &hdr->lumps[LUMP_PLANES];
+    bsp->planes      = (bspplane_t *)((char *)hdr + lump->ofs);
+    bsp->plane_count = lump->len / sizeof(*bsp->planes);
 
     lump = &hdr->lumps[LUMP_TEXTURES];
     bsp_load_textures(bsp, *lump);

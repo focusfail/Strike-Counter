@@ -16,7 +16,7 @@ struct Face {
     vec4 t;
     vec2 tex_size;
     uint tex_layer;
-    uint pad0;
+    uint side;
 };
 
 layout (binding = 1, std430) readonly buffer ssbo1 {
@@ -28,8 +28,13 @@ void main() {
     vec3 world_pos = positions[gl_VertexID].xyz;
 
     Face face = faces[face_id];
-    texcoord.x = -(dot(face.s.xyz, world_pos) + face.s.w);
+    texcoord.x = (dot(face.s.xyz, world_pos) + face.s.w);
     texcoord.y = (dot(face.t.xyz, world_pos) + face.t.w);
+
+    if (face.side != 1) {
+        texcoord.x = -texcoord.x;
+    } 
+    
     texcoord /= face.tex_size;
     layer  = face.tex_layer;
 

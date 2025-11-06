@@ -85,6 +85,12 @@ typedef struct {
 } bspentity_t;
 
 typedef struct {
+    vec3 normal;
+    float dist;
+    int32_t type;
+} bspplane_t;
+
+typedef struct {
     void *file_buffer;
 
     wad_t **wads;
@@ -92,6 +98,7 @@ typedef struct {
     bspvert_t *verts;
     bspedge_t *edges;
     miptex_t **miptex;
+    bspplane_t *planes;
     bspentity_t entities[MAX_MAP_ENTITIES];
     bsptexinfo_t *texinfo;
     bspsurfedge_t *surfedges;
@@ -100,6 +107,7 @@ typedef struct {
     uint32_t face_count;
     uint32_t vert_count;
     uint32_t edge_count;
+    uint32_t plane_count;
     uint32_t miptex_count;
     uint32_t entity_count;
     uint32_t texinfo_count;

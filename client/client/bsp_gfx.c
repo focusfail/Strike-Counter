@@ -241,7 +241,7 @@ void construct_face_buffer(bsp_t *bsp, bspgfx_t *gfx) {
             .size    = {mt->w, mt->h},
             .s       = {ti->v_s[0], ti->v_s[1], ti->v_s[2], ti->v_s[3]},
             .t       = {ti->v_t[0], ti->v_t[1], ti->v_t[2], ti->v_t[3]},
-            .pad0    = 1337,
+            .side    = (uint32_t)face->side,
         };
     }
 

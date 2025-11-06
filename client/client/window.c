@@ -1,4 +1,5 @@
 #include "client/window.h"
+#include "cglm/vec2.h"
 #include "common/log.h"
 
 #define NK_INCLUDE_FIXED_TYPES
@@ -45,6 +46,16 @@ const char *get_key_name(int kc, int sc) {
     }
 }
 
+#define REQUIRE_VALID_WINDOW()                                                 \
+    do {                                                                       \
+        if (!g_win) {                                                          \
+            log_fatal("No window bound");                                      \
+        }                                                                      \
+        if (!g_win->ptr) {                                                     \
+            log_fatal("No window created");                                    \
+        }                                                                      \
+    } while (0);
+
 void keyboard_callback(GLFWwindow *ptr, int kc, int sc, int ac, int mod) {
     nk_glfw3_key_callback(ptr, kc, sc, ac, mod);
     scwin_t *win = glfwGetWindowUserPointer(ptr);
@@ -65,7 +76,8 @@ void mouse_button_callback(GLFWwindow *ptr, int button, int ac, int mods) {
 void scroll_callback(GLFWwindow *ptr, double xoff, double yoff) {}
 
 void mouse_callback(GLFWwindow *ptr, double x, double y) {
-    scwin_t *win        = glfwGetWindowUserPointer(ptr);
+    scwin_t *win = glfwGetWindowUserPointer(ptr);
+
     win->curr_cursor[0] = (float)x;
     win->curr_cursor[1] = (float)y;
 }
@@ -114,10 +126,13 @@ scwin_t *w_create(int w, int h, const char *title) {
     memset(win->curr_mouse_keys, 0, sizeof(win->curr_mouse_keys));
     memset(win->prev_mouse_keys, 0, sizeof(win->prev_mouse_keys));
 
+    glm_vec2_copy(GLM_VEC2_ZERO, win->prev_cursor);
+    glm_vec2_copy(GLM_VEC2_ZERO, win->curr_cursor);
+
     return win;
 }
 
-void w_make_current(scwin_t **win) { g_win = *win; }
+void w_make_current(scwin_t *win) { g_win = win; }
 
 void w_free(scwin_t *win) {
     if (win && win->ptr) {
@@ -130,8 +145,12 @@ void w_free(scwin_t *win) {
     }
 }
 
-void w_swap() { glfwSwapBuffers(g_win->ptr); }
+void w_swap() {
+    REQUIRE_VALID_WINDOW();
+    glfwSwapBuffers(g_win->ptr);
+}
 void w_poll_events() {
+    REQUIRE_VALID_WINDOW();
     memcpy(g_win->prev_keys, g_win->curr_keys, sizeof(g_win->curr_keys));
     glm_vec2_copy(g_win->curr_cursor, g_win->prev_cursor);
     glfwPollEvents();
@@ -141,51 +160,69 @@ void w_poll_events() {
     g_win->frametime = new_time;
 }
 
-void w_get_size(int32_t *w, int32_t *h) { glfwGetWindowSize(g_win->ptr, w, h); }
+void w_get_size(int32_t *w, int32_t *h) {
+    REQUIRE_VALID_WINDOW();
+    glfwGetWindowSize(g_win->ptr, w, h);
+}
 
-double w_get_deltatime() { return g_win->deltatime; }
-double w_get_fps() { return 1.0 / g_win->deltatime; }
+double w_get_deltatime() {
+    REQUIRE_VALID_WINDOW();
+    return g_win->deltatime;
+}
+double w_get_fps() {
+    REQUIRE_VALID_WINDOW();
+    return 1.0 / g_win->deltatime;
+}
 
 void w_get_fb_size(int32_t *w, int32_t *h) {
+    REQUIRE_VALID_WINDOW();
     glfwGetFramebufferSize(g_win->ptr, w, h);
 }
 
 void w_hide_cursor() {
+    REQUIRE_VALID_WINDOW();
     glfwSetInputMode(g_win->ptr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
 void w_show_cursor() {
+    REQUIRE_VALID_WINDOW();
     glfwSetInputMode(g_win->ptr, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
 
 bool w_should_close() {
-    w_swap();
-    w_poll_events();
-
+    REQUIRE_VALID_WINDOW();
     return glfwWindowShouldClose(g_win->ptr);
 }
 
 bool key_once(uint32_t kc) {
+    REQUIRE_VALID_WINDOW();
     return !g_win->prev_keys[kc] && g_win->curr_keys[kc];
 }
 
 bool key_held(uint32_t kc) {
+    REQUIRE_VALID_WINDOW();
     return g_win->prev_keys[kc] && g_win->curr_keys[kc];
 }
 
-void get_cursor_pos(vec2 pos) { glm_vec2_copy(g_win->curr_cursor, pos); }
+void get_cursor_pos(vec2 pos) {
+    REQUIRE_VALID_WINDOW();
+    glm_vec2_copy(g_win->curr_cursor, pos);
+}
 
 void get_cursor_delta(vec2 pos) {
+    REQUIRE_VALID_WINDOW();
     glm_vec2_sub(g_win->curr_cursor, g_win->prev_cursor, pos);
 }
 
 float w_get_aspect() {
+    REQUIRE_VALID_WINDOW();
     int w, h;
     w_get_fb_size(&w, &h);
     return (float)w / h;
 }
 
 void w_toggle_wireframe() {
+    REQUIRE_VALID_WINDOW();
     if (g_win->wireframe) {
         g_win->wireframe = false;
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

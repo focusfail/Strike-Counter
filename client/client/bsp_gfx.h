@@ -11,7 +11,7 @@ typedef struct {
     float t[4]; // [xyz shift]
     vec2 size;
     uint32_t texture;
-    uint32_t pad0;
+    uint32_t side;
 } rface_t;
 
 typedef struct {

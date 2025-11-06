@@ -39,7 +39,7 @@ extern scwin_t *g_win;
 const char *get_key_name(int kc, int sc);
 
 scwin_t *w_create(int w, int h, const char *title);
-void w_make_current(scwin_t **win);
+void w_make_current(scwin_t *win);
 void w_free(scwin_t *win);
 
 void w_poll_events();

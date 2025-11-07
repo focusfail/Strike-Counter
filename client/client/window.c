@@ -73,6 +73,10 @@ void mouse_button_callback(GLFWwindow *ptr, int button, int ac, int mods) {
     nk_glfw3_mouse_button_callback(ptr, button, ac, mods);
 }
 
+void char_callback(GLFWwindow *ptr, uint32_t point) {
+    nk_glfw3_char_callback(ptr, point);
+}
+
 void scroll_callback(GLFWwindow *ptr, double xoff, double yoff) {}
 
 void mouse_callback(GLFWwindow *ptr, double x, double y) {
@@ -113,11 +117,11 @@ scwin_t *w_create(int w, int h, const char *title) {
         nk_glfw3_font_stash_begin(&win->glfw, &atlas);
         nk_glfw3_font_stash_end(&win->glfw);
     }
-
     glfwSetWindowUserPointer(win->ptr, win);
     glfwSetKeyCallback(win->ptr, (GLFWkeyfun)keyboard_callback);
     glfwSetCursorPosCallback(win->ptr, mouse_callback);
     glfwSetMouseButtonCallback(win->ptr, mouse_button_callback);
+    glfwSetCharCallback(win->ptr, char_callback);
 
     win->wireframe = false;
 
@@ -181,12 +185,25 @@ void w_get_fb_size(int32_t *w, int32_t *h) {
 
 void w_hide_cursor() {
     REQUIRE_VALID_WINDOW();
+    g_win->cursor_visible = false;
     glfwSetInputMode(g_win->ptr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
 void w_show_cursor() {
     REQUIRE_VALID_WINDOW();
+    g_win->cursor_visible = true;
     glfwSetInputMode(g_win->ptr, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+}
+
+void w_toggle_cursor() {
+    REQUIRE_VALID_WINDOW();
+    if (g_win->cursor_visible) {
+        g_win->cursor_visible = false;
+        w_hide_cursor();
+    } else {
+        g_win->cursor_visible = true;
+        w_show_cursor();
+    }
 }
 
 bool w_should_close() {

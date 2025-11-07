@@ -40,6 +40,7 @@ target_sources(
     "${SC_SRC}/client/client/bsp.c"
     "${SC_SRC}/client/client/wad.c"
     "${SC_SRC}/client/client/camera.c"
+    "${SC_SRC}/client/client/console.c"
     "${SC_SRC}/client/client/window.c"
     "${SC_SRC}/client/client/gl_common.c"
     "${SC_SRC}/client/client/bsp_gfx.c"

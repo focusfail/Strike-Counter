@@ -38,6 +38,8 @@ void main() {
     texcoord /= face.tex_size;
     layer  = face.tex_layer;
 
+    //? flipping x makes maps and textures render correctly?
+    world_pos.x = -world_pos.x;
     texture_size = face.tex_size;
     gl_Position = proj * view * vec4(world_pos.xzy, 1.0);
 }

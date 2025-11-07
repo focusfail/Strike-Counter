@@ -83,8 +83,8 @@ void bsp_load_entities(bsp_t *bsp, bsplump_t lump) {
         }
         p = skip_ws(p + 1);
 
-        if (bsp->entity_count >= MAX_MAP_ENTITIES) {
-            fprintf(stderr, "Too many entities (max %d)\n", MAX_MAP_ENTITIES);
+        if (bsp->entity_count >= MAX_ENTITIES) {
+            fprintf(stderr, "Too many entities (max %d)\n", MAX_ENTITIES);
             return;
         }
 
@@ -245,16 +245,36 @@ void load_wads(bsp_t *bsp) {
     free(wad_paths);
 }
 
-bsp_t *bsp_load(const char *fn) {
+bsp_t *bsp_create(const char *fn) {
+    bsp_t *bsp = malloc(sizeof(*bsp));
+
+    bsp->file_buffer = 0;
+    bsp->faces       = NULL;
+    bsp->edges       = NULL;
+    bsp->surfedges   = NULL;
+    bsp->miptex      = NULL;
+    bsp->texinfo     = NULL;
+
+    bsp->face_count     = 0;
+    bsp->edge_count     = 0;
+    bsp->surfedge_count = 0;
+    bsp->miptex_count   = 0;
+    bsp->texinfo_count  = 0;
+
+    bsp_load(bsp, fn);
+
+    return bsp;
+}
+
+void bsp_load(bsp_t *bsp, const char *fn) {
     char *file_buf   = NULL;
     size_t file_size = file_read(fn, &file_buf);
 
     if (file_size < sizeof(bspheader_t) || !file_buf) {
-        return NULL;
+        return;
     }
 
     bspheader_t *hdr = (bspheader_t *)file_buf;
-    bsp_t *bsp       = malloc(sizeof(*bsp));
     bsp->file_buffer = file_buf;
 
     if (hdr->version != 30) {
@@ -287,6 +307,14 @@ bsp_t *bsp_load(const char *fn) {
     bsp->planes      = (bspplane_t *)((char *)hdr + lump->ofs);
     bsp->plane_count = lump->len / sizeof(*bsp->planes);
 
+    lump            = &hdr->lumps[LUMP_LEAFS];
+    bsp->leafs      = (bspleaf_t *)((char *)hdr + lump->ofs);
+    bsp->leaf_count = lump->len / sizeof(*bsp->leafs);
+
+    lump            = &hdr->lumps[LUMP_NODES];
+    bsp->nodes      = (bspnode_t *)((char *)hdr + lump->ofs);
+    bsp->node_count = lump->len / sizeof(*bsp->nodes);
+
     lump = &hdr->lumps[LUMP_TEXTURES];
     bsp_load_textures(bsp, *lump);
 
@@ -294,7 +322,7 @@ bsp_t *bsp_load(const char *fn) {
     bsp_load_entities(bsp, *lump);
 
     load_wads(bsp);
-    return bsp;
+    return;
 }
 
 epair_t *epair_from_key(bspentity_t *ent, const char *key) {

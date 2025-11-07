@@ -9,9 +9,11 @@
 #include "client/bsp.h"
 #include "client/camera.h"
 #include "client/window.h"
+#include "client/console.h"
 #include "common/log.h"
 
 sccamera_t *cam;
+console_t *con;
 scwin_t *win;
 bsp_t *bsp;
 bspgfx_t *gfx;
@@ -35,6 +37,9 @@ bool handle_input(double dt) {
         w_toggle_wireframe();
     }
 
+    if (key_once(GLFW_KEY_LEFT_ALT)) {
+        w_toggle_cursor();
+    }
     if (key_once(GLFW_KEY_F2)) {
         gfx->debug++;
         if (gfx->debug > 2) {
@@ -44,6 +49,10 @@ bool handle_input(double dt) {
 
     if (key_once(GLFW_KEY_F3)) {
         bsp_gfx_load(gfx, bsp);
+    }
+
+    if (key_once(GLFW_KEY_GRAVE_ACCENT)) {
+        con->visible = !con->visible;
     }
 
     // forward/back
@@ -76,11 +85,13 @@ bool handle_input(double dt) {
         glm_vec3_add(cam->position, direction, cam->position);
     }
 
-    vec2 mouse_delta = GLM_VEC2_ONE_INIT;
-    get_cursor_delta(mouse_delta);
+    if (!win->cursor_visible) {
+        vec2 mouse_delta = GLM_VEC2_ONE_INIT;
+        get_cursor_delta(mouse_delta);
 
-    camera_handle_mouse(cam, mouse_delta, mouse_sens);
-    camera_update(cam, 75.0f, w_get_aspect());
+        camera_handle_mouse(cam, mouse_delta, mouse_sens);
+        camera_update(cam, 75.0f, w_get_aspect());
+    }
 
     return true;
 }
@@ -105,7 +116,8 @@ int main(void) {
     glViewport(0, 0, w, h);
     glClearColor(0.8f, 0.8f, 0.8f, 1.0f);
 
-    bsp = bsp_load("/home/focus/.local/share/Steam/steamapps/common/Half-Life/"
+    bsp =
+        bsp_create("/home/focus/.local/share/Steam/steamapps/common/Half-Life/"
                    "cstrike/maps/de_dust2.bsp");
 
     gfx = bsp_gfx_create(bsp);
@@ -113,6 +125,8 @@ int main(void) {
 
     cam = malloc(sizeof(*cam));
     camera_init(cam);
+
+    con = console_create();
 
     vec3 start = GLM_VEC3_ZERO_INIT;
     for (int i = 0; i < bsp->entity_count; i++) {
@@ -143,12 +157,13 @@ found_player_start:
     while (!w_should_close()) {
         w_poll_events();
         double dt = w_get_deltatime();
-        // double fps = w_get_fps();
 
         if (!handle_input(dt)) break;
 
-        // nk_glfw3_new_frame(&win->glfw);
-        // nk_end(win->nk);
+        nk_glfw3_new_frame(&win->glfw);
+        if (con->visible) {
+            console_render(win->nk, con, bsp, gfx);
+        }
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -157,8 +172,8 @@ found_player_start:
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         bsp_gfx_render(gfx, cam);
-        // nk_glfw3_render(&win->glfw, NK_ANTI_ALIASING_ON, 512 * 1024, 128 *
-        // 1024);
+        nk_glfw3_render(&win->glfw, NK_ANTI_ALIASING_ON, 512 * 1024,
+                        128 * 1024);
         w_swap();
     }
 

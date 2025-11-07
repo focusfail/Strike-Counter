@@ -248,14 +248,13 @@ void load_textures(bsp_t *bsp, bspgfx_t *gfx) {
                 goto missing_texture;
             }
         } else if (find_texture_in_wad(bsp, mt->name, &wad, &lump)) {
-            log_warn("Unable to locate texture '%s'", mt->name);
-
             if (!load_wad_image(wad, lump, &image, &w, &h)) {
                 goto missing_texture;
             }
+        } else {
+            log_warn("Failed to locate texture: %s", mt->name);
+            goto missing_texture;
         }
-
-        log_debug("Texture %s at index %d", lump->name, i);
 
         glTextureSubImage3D(tex, 0, 0, 0, i, w, h, 1, GL_RGBA, GL_UNSIGNED_BYTE,
                             image);
@@ -264,7 +263,6 @@ void load_textures(bsp_t *bsp, bspgfx_t *gfx) {
         continue;
 
     missing_texture:
-        log_warn("Applying missing texture at index %d", i);
         glTextureSubImage3D(tex, 0, 0, 0, i, 256, 256, 1, GL_RGBA,
                             GL_UNSIGNED_BYTE, missing);
         continue;
@@ -337,16 +335,6 @@ void bsp_gfx_free(bspgfx_t *gfx) {
         bsp_gfx_unload_gpu(gfx);
         free(gfx);
         gfx = NULL;
-    }
-}
-
-bspface_t *get_faces_to_render(bsp_t *bsp) {
-
-    for (int i = 0; i < bsp->face_count; i++) {
-        bspface_t *face = &bsp->faces[i];
-        miptex_t *mt    = bsp->miptex[bsp->texinfo[face->texinfo].miptex];
-
-        if (strncmp(mt->name, "aaatrigger", 16) == 0) continue;
     }
 }
 

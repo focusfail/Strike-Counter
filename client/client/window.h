@@ -29,6 +29,7 @@ typedef struct {
     bool prev_mouse_keys[GLFW_MOUSE_BUTTON_LAST];
     bool curr_mouse_keys[GLFW_MOUSE_BUTTON_LAST];
     bool wireframe;
+    bool cursor_visible;
 
     double frametime;
     double deltatime;
@@ -56,6 +57,7 @@ double w_get_fps();
 void w_hide_cursor();
 void w_show_cursor();
 void w_toggle_wireframe();
+void w_toggle_cursor();
 
 void get_cursor_pos(vec2 pos);
 void get_cursor_delta(vec2 pos);

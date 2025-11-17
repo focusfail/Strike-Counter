@@ -52,7 +52,11 @@ bool handle_input(double dt) {
     }
 
     if (key_once(GLFW_KEY_GRAVE_ACCENT)) {
-        con->visible = !con->visible;
+        if (console_should_render(con)) {
+            console_hide(con);
+        } else {
+            console_show(con);
+        }
     }
 
     // forward/back
@@ -161,15 +165,13 @@ found_player_start:
         if (!handle_input(dt)) break;
 
         nk_glfw3_new_frame(&win->glfw);
-        if (con->visible) {
-            console_render(win->nk, con, bsp, gfx);
-        }
-
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glEnable(GL_BLEND);
         glEnable(GL_DEPTH_TEST);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        console_render(win->nk, con, bsp, gfx);
 
         bsp_gfx_render(gfx, cam);
         nk_glfw3_render(&win->glfw, NK_ANTI_ALIASING_ON, 512 * 1024,

@@ -16,6 +16,8 @@
 
 typedef struct {
     bool visible;
+    bool initial_focus;
+    uint8_t open_delay;
     char command[256];
     char history[256][256];
     uint32_t history_len;
@@ -23,6 +25,11 @@ typedef struct {
 } console_t;
 
 console_t *console_create();
+
+void console_hide(console_t *con);
+void console_show(console_t *con);
+
+bool console_should_render(console_t *con);
 void console_render(struct nk_context *nk, console_t *con, bsp_t *bsp,
                     bspgfx_t *gfx);
 void console_destroy(console_t *con);

@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 
+const char *expand_user(const char *path);
 size_t file_read(const char *filename, char **dest);
 
 #endif // COMMON_FILE_H

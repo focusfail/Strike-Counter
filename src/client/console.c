@@ -12,12 +12,12 @@
 console_t *console_create() {
     console_t *con = malloc(sizeof(*con));
 
-    con->history_len   = 0;
-    con->command_len   = 0;
-    con->visible       = false;
+    con->history_len = 0;
+    con->command_len = 0;
+    con->visible = false;
     con->initial_focus = false;
-    con->open_delay    = 1; // delay console by one frame to ignore the console
-                            // open bind as a command
+    con->open_delay = 1; // delay console by one frame to ignore the console
+                         // open bind as a command
 
     con->command[0] = '\0';
 
@@ -29,7 +29,7 @@ void console_handle_command(console_t *con, bsp_t *bsp, bspgfx_t *gfx) {
     if (strncasecmp(con->command, "map", 3) == 0) {
         char path[256];
         snprintf(path, 256,
-                 "/home/focus/.local/share/Steam/steamapps/common/Half-Life/"
+                 "~/.local/share/Steam/steamapps/common/Half-Life/"
                  "cstrike/maps/%s.bsp",
                  con->command + 4);
 
@@ -47,13 +47,13 @@ bool console_should_render(console_t *con) {
 
 void console_hide(console_t *con) {
     con->open_delay = 1;
-    con->visible    = false;
+    con->visible = false;
 }
 
 void console_show(console_t *con) {
     con->initial_focus = true;
-    con->visible       = true;
-    con->open_delay    = 1;
+    con->visible = true;
+    con->open_delay = 1;
 }
 
 void console_render(struct nk_context *nk, console_t *con, bsp_t *bsp,

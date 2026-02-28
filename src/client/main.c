@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <glad/gl.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "GLFW/glfw3.h"
 #include "cglm/vec3.h"
@@ -100,20 +101,31 @@ bool handle_input(double dt) {
     return true;
 }
 
-int locate_halflife() {
+void *ensure_halflife() {
+    const char *path = "/.local/share/steam/steamapps/common/Half-Life";
     const char *home = getenv("HOME");
     if (!home) {
-        return 0;
+        return NULL;
     }
+
+    char *hl_path = malloc(strlen(path) + strlen(home) + 1);
+    strcpy(hl_path, home);
+    strcat(hl_path, path);
+    log_info("%s", hl_path);
+
+    if (!access(hl_path, F_OK)) {
+        log_info("%s", home);
+        log_fatal("Unable to locate half-life install.");
+    }
+
+    free(hl_path);
 }
 
 int main(int argc, const char **argv) {
-    if (argc < 2) {
-        log_fatal("Provide path to Half-Life install. \n e.g.: "
-                  "~/.local/share/steam/steamapps/common/Half-Life");
-    }
+    (void)argc;
+    (void)argv;
 
-    const char *base_path = argv[1];
+    ensure_halflife();
 
     win = w_create(1920, 1080, "strike counter");
     w_make_current(win);
@@ -134,9 +146,8 @@ int main(int argc, const char **argv) {
     glViewport(0, 0, w, h);
     glClearColor(0.8f, 0.8f, 0.8f, 1.0f);
 
-    bsp =
-        bsp_create("/home/focus/.local/share/Steam/steamapps/common/Half-Life/"
-                   "cstrike/maps/de_dust2.bsp");
+    bsp = bsp_create("~/.local/share/Steam/steamapps/common/Half-Life/"
+                     "cstrike/maps/de_dust2.bsp");
 
     gfx = bsp_gfx_create(bsp);
     bsp_dump(bsp);

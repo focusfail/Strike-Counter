@@ -1,12 +1,30 @@
 #include "common/file.h"
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "common/log.h"
 
+const char *expand_user(const char *path) {
+    const char *home = getenv("HOME");
+    if (!home) {
+        home = getenv("USERPROFILE");
+    }
+
+    if (path[0] == '~') {
+        char *expanded = malloc(strlen(path) + strlen(home));
+        strcpy(expanded, home);
+        strcat(expanded, path + 1);
+        return expanded;
+    }
+
+    return strdup(path);
+}
+
 size_t file_read(const char *filename, char **dest) {
-    *dest    = NULL;
-    FILE *fp = fopen(filename, "rb");
+    *dest = NULL;
+    FILE *fp = fopen(expand_user(filename), "rb");
     if (!fp) {
         log_error("Failed to open \"%s\"", filename);
         return 0;

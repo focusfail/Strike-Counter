@@ -108,6 +108,7 @@ typedef struct {
 } bspleaf_t;
 
 typedef struct {
+    const char *hl_base_path;
     void *file_buffer;
 
     wad_t **wads;

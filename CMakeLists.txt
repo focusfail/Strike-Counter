@@ -8,8 +8,8 @@ set(GLFW_BUILD_DOCS CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES CACHE BOOL "" FORCE)
 
-set(SC_SRC "${PROJECT_SOURCE_DIR}")
-set(SC_EXT "${SC_SRC}/external")
+set(SC_SRC "${PROJECT_SOURCE_DIR}/src")
+set(SC_EXT "${PROJECT_SOURCE_DIR}/third_party")
 
 # glad
 add_library(glad  "${SC_EXT}/glad/src/gl.c")
@@ -25,9 +25,9 @@ add_library(stb INTERFACE)
 target_include_directories(stb INTERFACE "${SC_EXT}/stb/")
 
 # common strike_counter lib
-file(GLOB_RECURSE strike_counter_lib_src "${PROJECT_SOURCE_DIR}/common/*.c")
+file(GLOB_RECURSE strike_counter_lib_src "${SC_SRC}/common/*.c")
 add_library(strike_counter_lib ${strike_counter_lib_src})
-target_include_directories(strike_counter_lib PUBLIC "${PROJECT_SOURCE_DIR}/common/")
+target_include_directories(strike_counter_lib PUBLIC "${SC_SRC}/")
 
 add_subdirectory("${SC_EXT}/glfw")
 add_subdirectory("${SC_EXT}/cglm")
@@ -36,24 +36,24 @@ add_executable(strike_counter)
 target_sources(
     strike_counter
     PRIVATE
-    "${SC_SRC}/client/client/main.c"
-    "${SC_SRC}/client/client/bsp.c"
-    "${SC_SRC}/client/client/wad.c"
-    "${SC_SRC}/client/client/camera.c"
-    "${SC_SRC}/client/client/console.c"
-    "${SC_SRC}/client/client/window.c"
-    "${SC_SRC}/client/client/gl_common.c"
-    "${SC_SRC}/client/client/bsp_gfx.c"
+    "${SC_SRC}/client/main.c"
+    "${SC_SRC}/client/bsp.c"
+    "${SC_SRC}/client/wad.c"
+    "${SC_SRC}/client/camera.c"
+    "${SC_SRC}/client/console.c"
+    "${SC_SRC}/client/window.c"
+    "${SC_SRC}/client/gl_common.c"
+    "${SC_SRC}/client/bsp_gfx.c"
 )
 
 target_include_directories(
     strike_counter
     PRIVATE
-    "${PROJECT_SOURCE_DIR}/client/"
+    "${SC_SRC}/"
     "${SC_EXT}/nuklear"
 )
 target_link_libraries(strike_counter PRIVATE glfw glad cglm strike_counter_lib stb)
-target_compile_definitions(strike_counter PUBLIC SC_ASSET_PATH="${PROJECT_SOURCE_DIR}/client/assets")
+target_compile_definitions(strike_counter PUBLIC SC_ASSET_PATH="${PROJECT_SOURCE_DIR}/assets")
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     # target_compile_options(strike_counter PRIVATE -ggdb -Wall)

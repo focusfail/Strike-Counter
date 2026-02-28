@@ -20,7 +20,7 @@ void bsp_load_textures(bsp_t *bsp, bsplump_t lump) {
         return;
     }
 
-    char *tex_start   = (char *)bsp->file_buffer + lump.ofs;
+    char *tex_start = (char *)bsp->file_buffer + lump.ofs;
     int32_t tex_count = *(int32_t *)tex_start;
 
     if (tex_count < 0 || tex_count > 2048) {
@@ -29,7 +29,7 @@ void bsp_load_textures(bsp_t *bsp, bsplump_t lump) {
     }
 
     bsp->miptex_count = tex_count;
-    bsp->miptex       = malloc(sizeof(bsp->miptex) * tex_count);
+    bsp->miptex = malloc(sizeof(bsp->miptex) * tex_count);
 
     // After the texture count 'n' follows 'n' offsets
     int32_t *tex_offsets = (int32_t *)(tex_start + sizeof(int32_t));
@@ -69,7 +69,7 @@ static const char *parse_string(const char *p, const char **out) {
 
 void bsp_load_entities(bsp_t *bsp, bsplump_t lump) {
     char *entities_string = (char *)bsp->file_buffer + lump.ofs;
-    const char *p         = entities_string;
+    const char *p = entities_string;
 
     bsp->entity_count = 0;
 
@@ -92,7 +92,7 @@ void bsp_load_entities(bsp_t *bsp, bsplump_t lump) {
         memset(ent->origin, 0, sizeof(ent->origin));
         ent->brush_first = -1;
         ent->brush_count = 0;
-        ent->pairs       = NULL;
+        ent->pairs = NULL;
 
         epair_t **pair_tail = &ent->pairs;
 
@@ -153,14 +153,14 @@ void bsp_load_entities(bsp_t *bsp, bsplump_t lump) {
             memcpy(ep->v, val_str, val_len);
             ep->v[val_len] = '\0';
 
-            ep->k     = ep->k;
-            ep->v     = ep->v;
+            ep->k = ep->k;
+            ep->v = ep->v;
             ep->k_len = (uint32_t)key_len;
             ep->v_len = (uint32_t)val_len;
 
-            ep->next   = NULL;
+            ep->next = NULL;
             *pair_tail = ep;
-            pair_tail  = &ep->next;
+            pair_tail = &ep->next;
 
             p = skip_ws(p);
         }
@@ -194,7 +194,7 @@ char **locate_wads(bsp_t *bsp, const char **base_paths, uint32_t path_count,
     char *token = strtok(wad_paths_str, " ; ");
     while (token != NULL) {
         char *tmp_name = strdup(token);
-        char *name     = basename(tmp_name);
+        char *name = basename(tmp_name);
 
         bool found = false;
         for (int i = 0; i < path_count; i++) {
@@ -226,7 +226,7 @@ char **locate_wads(bsp_t *bsp, const char **base_paths, uint32_t path_count,
 
 void load_wads(bsp_t *bsp) {
     bspentity_t *ent = &bsp->entities[0];
-    epair_t *pair    = epair_from_key(ent, "wad");
+    epair_t *pair = epair_from_key(ent, "wad");
     if (!pair) {
         log_error("Failed to retrieve WAD part from entities.");
         return;
@@ -236,7 +236,7 @@ void load_wads(bsp_t *bsp) {
     char **wad_paths = locate_wads(bsp, wad_search_paths, wad_search_path_count,
                                    &wad_path_count);
 
-    bsp->wads      = malloc(sizeof(*bsp->wads) * wad_path_count);
+    bsp->wads = malloc(sizeof(*bsp->wads) * wad_path_count);
     bsp->wad_count = wad_path_count;
     for (int i = 0; i < wad_path_count; i++) {
         bsp->wads[i] = wad_open(wad_paths[i]);
@@ -249,17 +249,17 @@ bsp_t *bsp_create(const char *fn) {
     bsp_t *bsp = malloc(sizeof(*bsp));
 
     bsp->file_buffer = 0;
-    bsp->faces       = NULL;
-    bsp->edges       = NULL;
-    bsp->surfedges   = NULL;
-    bsp->miptex      = NULL;
-    bsp->texinfo     = NULL;
+    bsp->faces = NULL;
+    bsp->edges = NULL;
+    bsp->surfedges = NULL;
+    bsp->miptex = NULL;
+    bsp->texinfo = NULL;
 
-    bsp->face_count     = 0;
-    bsp->edge_count     = 0;
+    bsp->face_count = 0;
+    bsp->edge_count = 0;
     bsp->surfedge_count = 0;
-    bsp->miptex_count   = 0;
-    bsp->texinfo_count  = 0;
+    bsp->miptex_count = 0;
+    bsp->texinfo_count = 0;
 
     bsp_load(bsp, fn);
 
@@ -267,7 +267,7 @@ bsp_t *bsp_create(const char *fn) {
 }
 
 void bsp_load(bsp_t *bsp, const char *fn) {
-    char *file_buf   = NULL;
+    char *file_buf = NULL;
     size_t file_size = file_read(fn, &file_buf);
 
     if (file_size < sizeof(bspheader_t) || !file_buf) {
@@ -283,36 +283,36 @@ void bsp_load(bsp_t *bsp, const char *fn) {
 
     bsplump_t *lump;
 
-    lump            = &hdr->lumps[LUMP_FACES];
-    bsp->faces      = (bspface_t *)((char *)hdr + lump->ofs);
+    lump = &hdr->lumps[LUMP_FACES];
+    bsp->faces = (bspface_t *)((char *)hdr + lump->ofs);
     bsp->face_count = lump->len / sizeof(*bsp->faces);
 
-    lump            = &hdr->lumps[LUMP_VERTEXES];
-    bsp->verts      = (bspvert_t *)((char *)hdr + lump->ofs);
+    lump = &hdr->lumps[LUMP_VERTEXES];
+    bsp->verts = (bspvert_t *)((char *)hdr + lump->ofs);
     bsp->vert_count = lump->len / sizeof(*bsp->verts);
 
-    lump            = &hdr->lumps[LUMP_EDGES];
-    bsp->edges      = (bspedge_t *)((char *)hdr + lump->ofs);
+    lump = &hdr->lumps[LUMP_EDGES];
+    bsp->edges = (bspedge_t *)((char *)hdr + lump->ofs);
     bsp->edge_count = lump->len / sizeof(*bsp->edges);
 
-    lump                = &hdr->lumps[LUMP_SURFEDGES];
-    bsp->surfedges      = (bspsurfedge_t *)((char *)hdr + lump->ofs);
+    lump = &hdr->lumps[LUMP_SURFEDGES];
+    bsp->surfedges = (bspsurfedge_t *)((char *)hdr + lump->ofs);
     bsp->surfedge_count = lump->len / sizeof(*bsp->surfedges);
 
-    lump               = &hdr->lumps[LUMP_TEXINFO];
-    bsp->texinfo       = (bsptexinfo_t *)((char *)hdr + lump->ofs);
+    lump = &hdr->lumps[LUMP_TEXINFO];
+    bsp->texinfo = (bsptexinfo_t *)((char *)hdr + lump->ofs);
     bsp->texinfo_count = lump->len / sizeof(*bsp->texinfo);
 
-    lump             = &hdr->lumps[LUMP_PLANES];
-    bsp->planes      = (bspplane_t *)((char *)hdr + lump->ofs);
+    lump = &hdr->lumps[LUMP_PLANES];
+    bsp->planes = (bspplane_t *)((char *)hdr + lump->ofs);
     bsp->plane_count = lump->len / sizeof(*bsp->planes);
 
-    lump            = &hdr->lumps[LUMP_LEAFS];
-    bsp->leafs      = (bspleaf_t *)((char *)hdr + lump->ofs);
+    lump = &hdr->lumps[LUMP_LEAFS];
+    bsp->leafs = (bspleaf_t *)((char *)hdr + lump->ofs);
     bsp->leaf_count = lump->len / sizeof(*bsp->leafs);
 
-    lump            = &hdr->lumps[LUMP_NODES];
-    bsp->nodes      = (bspnode_t *)((char *)hdr + lump->ofs);
+    lump = &hdr->lumps[LUMP_NODES];
+    bsp->nodes = (bspnode_t *)((char *)hdr + lump->ofs);
     bsp->node_count = lump->len / sizeof(*bsp->nodes);
 
     lump = &hdr->lumps[LUMP_TEXTURES];

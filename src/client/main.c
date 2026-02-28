@@ -18,12 +18,12 @@ scwin_t *win;
 bsp_t *bsp;
 bspgfx_t *gfx;
 float mouse_sens = 0.1f;
-double timeout   = 0.0;
+double timeout = 0.0;
 char fps_buffer[32];
 
 bool handle_input(double dt) {
     vec3 direction = GLM_VEC3_ZERO_INIT;
-    float speed    = 200.0f;
+    float speed = 200.0f;
 
     if (key_held(GLFW_KEY_ESCAPE)) {
         return false;
@@ -100,7 +100,21 @@ bool handle_input(double dt) {
     return true;
 }
 
-int main(void) {
+int locate_halflife() {
+    const char *home = getenv("HOME");
+    if (!home) {
+        return 0;
+    }
+}
+
+int main(int argc, const char **argv) {
+    if (argc < 2) {
+        log_fatal("Provide path to Half-Life install. \n e.g.: "
+                  "~/.local/share/steam/steamapps/common/Half-Life");
+    }
+
+    const char *base_path = argv[1];
+
     win = w_create(1920, 1080, "strike counter");
     w_make_current(win);
     w_hide_cursor();

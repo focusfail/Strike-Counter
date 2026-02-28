@@ -43,5 +43,5 @@ CMakeUserPresets.json
 
 build/
 dump.txt
-asan_suppresssions.txt
+asan_suppressions.txt
 .cache/
